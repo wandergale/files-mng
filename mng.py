@@ -1,70 +1,107 @@
 class Bloco:
-    def __init__(self, dado):
-        self.dado = dado
-        self.proximo_bloco = None
-
-class Disco:
-    def __init__(self, tamanho):
+    def _init_(self, tamanho):
         self.tamanho = tamanho
-        self.dados = [Bloco('') for _ in range(tamanho)]
-        self.espaco_livre = [Bloco('') for _ in range(tamanho)]
-        self.espaco_livre[0] = self.dados[0]
-        self.espaco_livre[0].proximo_bloco = self.dados[1]
-        for i in range(1, tamanho - 1):
-            self.espaco_livre[i] = self.dados[i]
-            self.espaco_livre[i].proximo_bloco = self.dados[i + 1]
+        self.conteudo = None
+        self.proximo = None
+
+class DiscoVirtual:
+    def _init_(self, tamanho):
+        self.tamanho = tamanho
+        self.espaco_livre = tamanho
+        self.primeiro_bloco = Bloco(tamanho)
+        self.primeiro_bloco.conteudo = "Espaco Livre"
+        self.primeiro_bloco.proximo = None
 
     def criar_arquivo(self, palavra):
-        if len(palavra) > self.espaco_livre_disponivel():
-            print("Memória insuficiente para criar o arquivo.")
+        if len(palavra) > self.espaco_livre:
+            print("Erro: Memória insuficiente para criar o arquivo.")
             return
 
-        bloco_atual = self.espaco_livre[0]
-        for char in palavra:
-            bloco_atual.dado = char
-            if bloco_atual.proximo_bloco:
-                bloco_atual = bloco_atual.proximo_bloco
-            else:
-                break
-
-    def ler_arquivo(self):
-        bloco_atual = self.dados[0]
-        arquivo = ""
+        bloco_atual = self.primeiro_bloco
         while bloco_atual:
-            arquivo += bloco_atual.dado
-            bloco_atual = bloco_atual.proximo_bloco
-        return arquivo
+            if bloco_atual.conteudo == "Espaco Livre":
+                if len(palavra) <= bloco_atual.tamanho:
+                    if len(palavra) == bloco_atual.tamanho:
+                        bloco_atual.conteudo = palavra
+                    else:
+                        novo_bloco = Bloco(bloco_atual.tamanho - len(palavra))
+                        novo_bloco.conteudo = "Espaco Livre"
+                        novo_bloco.proximo = bloco_atual.proximo
+                        bloco_atual.tamanho = len(palavra)
+                        bloco_atual.conteudo = palavra
+                        bloco_atual.proximo = novo_bloco
+                    self.espaco_livre -= len(palavra)
+                    print(f"Arquivo '{palavra}' criado com sucesso.")
+                    return
+            bloco_atual = bloco_atual.proximo
 
-    def excluir_arquivo(self):
-        bloco_atual = self.dados[0]
+        print("Erro: Não foi possível criar o arquivo.")
+
+    def ler_arquivo(self, palavra):
+        bloco_atual = self.primeiro_bloco
         while bloco_atual:
-            bloco_atual.dado = ''
-            bloco_atual = bloco_atual.proximo_bloco
-        self.atualizar_espaco_livre()
+            if bloco_atual.conteudo == palavra:
+                print(f"Conteúdo do arquivo '{palavra}': {bloco_atual.conteudo}")
+                return
+            bloco_atual = bloco_atual.proximo
 
-    def espaco_livre_disponivel(self):
-        espaco_disponivel = 0
-        bloco_atual = self.espaco_livre[0]
+        print(f"Arquivo '{palavra}' não encontrado.")
+
+    def mostrar_lista_encadeada(self):
+        bloco_atual = self.primeiro_bloco
         while bloco_atual:
-            espaco_disponivel += 1
-            bloco_atual = bloco_atual.proximo_bloco
-        return espaco_disponivel
+            print(f"Endereço: {bloco_atual}, Tamanho: {bloco_atual.tamanho}, Conteúdo: {bloco_atual.conteudo}")
+            bloco_atual = bloco_atual.proximo
 
-    def atualizar_espaco_livre(self):
-        bloco_atual = self.dados[0]
-        espaco_livre_index = 0
+    def excluir_arquivo(self, palavra):
+        bloco_atual = self.primeiro_bloco
         while bloco_atual:
-            if bloco_atual.dado == '':
-                self.espaco_livre[espaco_livre_index] = bloco_atual
-                espaco_livre_index += 1
-            bloco_atual = bloco_atual.proximo_bloco
-        while espaco_livre_index < self.tamanho:
-            self.espaco_livre[espaco_livre_index] = None
-            espaco_livre_index += 1
+            if bloco_atual.conteudo == palavra:
+                bloco_atual.conteudo = "Espaco Livre"
+                self.espaco_livre += len(palavra)
+                # Verificar se o bloco seguinte também é "Espaco Livre" e unir os blocos livres adjacentes
+                proximo_bloco = bloco_atual.proximo
+                if proximo_bloco and proximo_bloco.conteudo == "Espaco Livre":
+                    bloco_atual.tamanho += proximo_bloco.tamanho
+                    bloco_atual.proximo = proximo_bloco.proximo
+                print(f"Arquivo '{palavra}' excluído com sucesso.")
+                return
+            bloco_atual = bloco_atual.proximo
 
-# Exemplo de uso
-disco = Disco(32)
-disco.criar_arquivo("exemplo")
-print("Arquivo no disco:", disco.ler_arquivo())
-disco.excluir_arquivo()
-print("Espaço livre no disco:", disco.espaco_livre_disponivel())
+        print(f"Arquivo '{palavra}' não encontrado.")
+
+    def listar_blocos_livres(self):
+        bloco_atual = self.primeiro_bloco
+        blocos_livres = []
+        while bloco_atual:
+            if bloco_atual.conteudo == "Espaco Livre":
+                blocos_livres.append((bloco_atual.tamanho, bloco_atual))
+            bloco_atual = bloco_atual.proximo
+        return blocos_livres
+
+
+# Exemplo de uso:
+disco = DiscoVirtual(32)
+
+disco.criar_arquivo("texto1")
+disco.criar_arquivo("texto2")
+disco.criar_arquivo("texto3")
+
+disco.ler_arquivo("texto2")
+
+disco.excluir_arquivo("texto2")
+
+disco.criar_arquivo("texto4")
+
+disco.ler_arquivo("texto4")
+
+disco.criar_arquivo("texto5")
+disco.criar_arquivo("texto6")
+disco.criar_arquivo("maguire")
+
+blocos_livres = disco.listar_blocos_livres()
+print("Blocos Livres:")
+for tamanho, bloco in blocos_livres:
+    print(f"Tamanho: {tamanho}, Endereço: {bloco}")
+
+disco.mostrar_lista_encadeada()
