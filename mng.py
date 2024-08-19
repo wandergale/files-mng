@@ -1,11 +1,11 @@
 class Bloco:
-    def _init_(self, tamanho):
+    def __init__(self, tamanho):
         self.tamanho = tamanho
         self.conteudo = None
         self.proximo = None
 
 class DiscoVirtual:
-    def _init_(self, tamanho):
+    def __init__(self, tamanho):
         self.tamanho = tamanho
         self.espaco_livre = tamanho
         self.primeiro_bloco = Bloco(tamanho)
